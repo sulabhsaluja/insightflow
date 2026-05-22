@@ -1,14 +1,16 @@
 const nodemailer = require("nodemailer");
-const dns = require("dns");
-
-// Force IPv4 first to prevent "ENETUNREACH" IPv6 errors on Render
-dns.setDefaultResultOrder('ipv4first');
 
 let transporter;
 
 try {
   transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "192.178.211.108", // Hardcoded IPv4 for smtp.gmail.com to bypass Render's broken IPv6
+    port: 465,
+    secure: true,
+    tls: {
+      servername: "smtp.gmail.com",
+      rejectUnauthorized: true
+    },
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
