@@ -79,7 +79,7 @@ const UploadPage = () => {
         headers['Authorization'] = `Bearer ${user.token}`;
       }
 
-      const response = await fetch('http://localhost:8000/api/upload', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://insightflow-backend-6rzs.onrender.com/api'}/upload`, {
         method: 'POST',
         headers,
         body: formData

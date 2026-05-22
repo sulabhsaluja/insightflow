@@ -12,7 +12,7 @@ const SummaryDetailPage = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/summaries/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://insightflow-backend-6rzs.onrender.com/api'}/summaries/${id}`, {
           headers: {
             'Authorization': `Bearer ${user.token}`
           }
