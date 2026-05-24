@@ -1,35 +1,8 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-let transporter;
-
-try {
-  transporter = nodemailer.createTransport({
-    host: "192.178.211.108", // Hardcoded IPv4 for smtp.gmail.com to bypass Render's broken IPv6
-    port: 465,
-    secure: true,
-    tls: {
-      servername: "smtp.gmail.com",
-      rejectUnauthorized: true
-    },
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
-  // Non-blocking verification — log result but don't crash
-  transporter.verify()
-    .then(() => console.log("✅ Email transporter ready"))
-    .catch((err) => console.error("⚠️  Email auth failed (emails won't send):", err.message));
-} catch (err) {
-  console.error("⚠️  Email transporter creation failed:", err.message);
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendEmail(recipient, summary, fileName) {
-  if (!transporter) {
-    throw new Error("Email transporter not configured");
-  }
-
   const subjectLine = fileName
     ? `Your Analysis Report — ${fileName}`
     : "Your Dataset Analysis Report";
@@ -48,15 +21,19 @@ ${summary}
     </div>
   `;
 
-  const info = await transporter.sendMail({
-    from: `"InsightFlow" <${process.env.EMAIL_USER}>`,
+  const { data, error } = await resend.emails.send({
+    from: "InsightFlow <onboarding@resend.dev>", // use your verified domain once set up
     to: recipient,
     subject: subjectLine,
     html: htmlBody,
     text: summary,
   });
 
-  console.log("📧 Email sent:", info.messageId, "to:", recipient);
+  if (error) {
+    throw new Error(`Resend error: ${error.message}`);
+  }
+
+  console.log("📧 Email sent:", data.id, "to:", recipient);
 }
 
 module.exports = sendEmail;
