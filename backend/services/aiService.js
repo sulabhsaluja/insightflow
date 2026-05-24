@@ -5,7 +5,28 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || 'gsk_dummy_fallback_key',
 });
 
+// ── NEW: smart row sampler ───────────────────────────────────────────
+function sampleData(data) {
+  const limits = [200, 100, 50, 25, 10];
+  for (const n of limits) {
+    const slice = data.slice(0, n);
+    // ~4 chars per token, stay well under 8 000 tokens for data
+    if (JSON.stringify(slice).length / 4 < 8000) {
+      return { slice, n };
+    }
+  }
+  // last resort: 10 rows, truncate every cell to 60 chars
+  const slice = data.slice(0, 10).map(row =>
+    Object.fromEntries(
+      Object.entries(row).map(([k, v]) => [k, String(v).slice(0, 60)])
+    )
+  );
+  return { slice, n: 10 };
+}
+// ─────────────────────────────────────────────────────────────────────
+
 async function generateSummary(data, customInsight) {
+  const { slice, n } = sampleData(data);   // ← replaces data.slice(0, 1000)
 
   let prompt = `
 You are a professional data analyst.
@@ -16,11 +37,11 @@ Dataset Metadata:
 - Total rows in the uploaded file: ${data.length}
 - Columns present: ${data.length > 0 ? Object.keys(data[0]).join(", ") : "None"}
 
-Dataset content (showing up to 1000 rows):
-${JSON.stringify(data.slice(0, 1000))}
+Dataset content (showing ${n} of ${data.length} rows):
+${JSON.stringify(slice)}
 
 Important rules:
-- Be highly accurate with data facts. If a requested insight cannot be accurately found in the 1000 rows provided, mention that you are analyzing a sample.
+- Be highly accurate with data facts. If a requested insight cannot be accurately found in the sample provided, mention that you are analyzing a sample.
 - If the user asks for counts or totals, use the "Total rows" metadata above to give accurate numbers rather than manually counting the JSON objects.
 - Take a deep breath and work on this step by step. If calculating numbers or finding specific insights, explain your reasoning before giving the final answer.
 `;
@@ -62,7 +83,8 @@ Provide useful recommendations or conclusions based on the data.
 
   const completion = await groq.chat.completions.create({
     messages: [{ role: "user", content: prompt }],
-    model: "llama-3.3-70b-versatile"
+    model: "llama-3.3-70b-versatile",
+    max_tokens: 1024,      
   });
 
   return completion.choices[0].message.content;
