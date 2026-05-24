@@ -1,6 +1,14 @@
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 async function sendEmail(recipient, summary, fileName) {
   const subjectLine = fileName
@@ -21,19 +29,15 @@ ${summary}
     </div>
   `;
 
-  const { data, error } = await resend.emails.send({
-    from: "InsightFlow <onboarding@resend.dev>", // use your verified domain once set up
+  const info = await transporter.sendMail({
+    from: `"InsightFlow" <${process.env.EMAIL_USER}>`,
     to: recipient,
     subject: subjectLine,
     html: htmlBody,
     text: summary,
   });
 
-  if (error) {
-    throw new Error(`Resend error: ${error.message}`);
-  }
-
-  console.log("📧 Email sent:", data.id, "to:", recipient);
+  console.log("📧 Email sent:", info.messageId, "to:", recipient);
 }
 
 module.exports = sendEmail;
