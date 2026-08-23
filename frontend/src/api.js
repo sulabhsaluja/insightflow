@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "https://insightflow-backend-6rzs.onrender.com/api"
+  baseURL: "http://localhost:8000/api", // Replace with your backend API URL
 });
 
 export default API;

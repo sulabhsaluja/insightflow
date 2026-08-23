@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -11,6 +13,20 @@ const pageVariants = {
 const itemVariants = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 }
+};
+
+// Custom renderers so markdown output matches InsightFlow's existing dark theme
+// instead of looking like a generic markdown dump.
+const markdownComponents = {
+  h1: ({ children }) => <h3 className="summary-md-heading">{children}</h3>,
+  h2: ({ children }) => <h3 className="summary-md-heading">{children}</h3>,
+  h3: ({ children }) => <h4 className="summary-md-subheading">{children}</h4>,
+  p: ({ children }) => <p className="summary-md-paragraph">{children}</p>,
+  strong: ({ children }) => <strong className="summary-md-strong">{children}</strong>,
+  ul: ({ children }) => <ul className="summary-md-list">{children}</ul>,
+  ol: ({ children }) => <ol className="summary-md-list summary-md-list-ordered">{children}</ol>,
+  li: ({ children }) => <li className="summary-md-list-item">{children}</li>,
+  hr: () => <hr className="summary-md-divider" />,
 };
 
 const UploadPage = () => {
@@ -79,7 +95,7 @@ const UploadPage = () => {
         headers['Authorization'] = `Bearer ${user.token}`;
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://insightflow-backend-6rzs.onrender.com/api'}/upload`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'}/upload`, {
         method: 'POST',
         headers,
         body: formData
@@ -257,8 +273,10 @@ const UploadPage = () => {
             <div className="summary-result-header">
               <h3>{result.fileName || 'Dataset'} — Analysis</h3>
             </div>
-            <div className="summary-result-body">
-              {result.summaryText}
+            <div className="summary-result-body summary-markdown">
+              <ReactMarkdown components={markdownComponents} remarkPlugins={[remarkGfm]}>
+                {result.summaryText}
+              </ReactMarkdown>
             </div>
           </div>
 
