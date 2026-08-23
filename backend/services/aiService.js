@@ -7,7 +7,7 @@ const groq = new Groq({
 
 // ── NEW: smart row sampler ───────────────────────────────────────────
 function sampleData(data) {
-  const limits = [200, 100, 50, 25, 10];
+  const limits = [500, 200, 100, 50, 25, 10];
   for (const n of limits) {
     const slice = data.slice(0, n);
     // ~4 chars per token, stay well under 8 000 tokens for data
@@ -27,6 +27,7 @@ function sampleData(data) {
 
 async function generateSummary(data, customInsight) {
   const { slice, n } = sampleData(data);   // ← replaces data.slice(0, 1000)
+  console.log(`Sampled ${n} rows for this dataset`);
 
   let prompt = `
 You are a professional data analyst.
@@ -83,8 +84,9 @@ Provide useful recommendations or conclusions based on the data.
 
   const completion = await groq.chat.completions.create({
     messages: [{ role: "user", content: prompt }],
-    model: "llama-3.3-70b-versatile",
-    max_tokens: 1024,      
+    model: "openai/gpt-oss-120b",
+    max_tokens: 2048,
+    reasoning_effort: "low",
   });
 
   return completion.choices[0].message.content;
